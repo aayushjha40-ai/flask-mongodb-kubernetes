@@ -1,0 +1,20 @@
+# Environment files
+.env
+*.env
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Virtual environment
+venv/
+
+# Logs
+*.log
+
+# Node modules (future safety)
+node_modules/
+
+# OS files
+.DS_Store
+Thumbs.db

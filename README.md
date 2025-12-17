@@ -1,265 +1,388 @@
-# Flask + MongoDB on Kubernetes
+Flask + MongoDB on Kubernetes (Minikube)
 
-##  Project Overview
 
-This project demonstrates deploying a **Python Flask application** connected to a **MongoDB database** on a **Kubernetes cluster** using **Minikube**.
-The application is containerized using Docker and deployed with proper Kubernetes resources including **Deployments, StatefulSets, Services, Persistent Volumes, Secrets, and Horizontal Pod Autoscaling (HPA)**.
 
-The goal of this assignment is to showcase understanding of:
+Project Overview
 
-* Kubernetes core concepts
-* Database persistence and authentication
-* Service discovery (DNS)
-* Resource management
-* Autoscaling based on CPU usage
 
----
 
-##  Tools & Technologies Used
+This project demonstrates deploying a Python Flask application connected to a MongoDB database on a Kubernetes cluster using Minikube.
 
-* **Python 3**
-* **Flask** – Backend web framework
-* **MongoDB** – NoSQL database
-* **Docker** – Containerization
-* **Kubernetes (Minikube)** – Container orchestration
-* **kubectl** – Kubernetes CLI
-* **Horizontal Pod Autoscaler (HPA)** – Autoscaling
-* **Persistent Volumes & PVC** – Data persistence
+The application is containerized using Docker and deployed with Kubernetes resources such as Deployments, StatefulSets, Services, Persistent Volumes, Secrets, and Horizontal Pod Autoscaling (HPA).
 
----
 
-##  Architecture Overview
 
-```
+The purpose of this assignment is to demonstrate understanding of Kubernetes fundamentals, database persistence, service discovery, autoscaling, and basic security practices.
+
+
+
+Technologies Used
+
+
+
+Python 3
+
+Flask
+
+MongoDB
+
+Docker
+
+Kubernetes (Minikube)
+
+kubectl
+
+Horizontal Pod Autoscaler (HPA)
+
+
+
+Architecture Overview
+
+
+
 User Browser
-     ↓
+
+|
+
 Flask Service (NodePort)
-     ↓
-Flask Pods (2–5 replicas, autoscaled)
-     ↓
+
+|
+
+Flask Pods (Deployment, 2–5 replicas)
+
+|
+
 MongoDB Service (ClusterIP)
-     ↓
-MongoDB StatefulSet (Persistent Storage)
-```
 
-* Flask application runs in multiple replicas for high availability.
-* MongoDB runs as a StatefulSet with persistent storage.
-* Internal Kubernetes DNS enables service-to-service communication.
+|
 
----
+MongoDB StatefulSet (Persistent Volume)
 
-##  Project Structure
 
-```
-flask-k8s-project/
-│
-├── app.py
-├── requirements.txt
-├── Dockerfile
-│
-├── k8s/
-│   ├── mongo-secret.yaml
-│   ├── mongo-pvc.yaml
-│   ├── mongo-service.yaml
-│   ├── mongo-statefulset.yaml
-│   ├── flask-deployment.yaml
-│   ├── flask-service.yaml
-│   └── hpa.yaml
-│
-└── README.md
-```
 
----
+Flask runs in multiple replicas for availability.
 
-##  Docker Image Build
+MongoDB runs as a StatefulSet to ensure stable identity and persistent storage.
 
-Build the Flask application Docker image using Minikube’s Docker daemon:
+Kubernetes internal DNS is used for service-to-service communication.
 
-```bash
+
+
+Project Structure
+
+
+
+flask-k8s-project
+
+|-- app.py
+
+|-- requirements.txt
+
+|-- Dockerfile
+
+|-- README.md
+
+|-- k8s
+
+|-- mongo-secret.yaml
+
+|-- mongo-pvc.yaml
+
+|-- mongo-service.yaml
+
+|-- mongo-statefulset.yaml
+
+|-- flask-deployment.yaml
+
+|-- flask-service.yaml
+
+|-- hpa.yaml
+
+
+
+Flask Application
+
+
+
+The Flask application provides the following endpoints:
+
+
+
+/
+
+Returns a welcome message with the current date and time.
+
+
+
+/data
+
+POST: Inserts JSON data into MongoDB
+
+GET: Retrieves all stored documents from MongoDB
+
+
+
+MongoDB connection details are provided through environment variables.
+
+
+
+Docker Image Build
+
+
+
+The Flask application is containerized using Docker.
+
+
+
+Build the image using Minikube’s Docker environment:
+
+
+
 eval $(minikube docker-env)
+
 docker build -t flask-mongo-app .
-```
 
-*(Image is used locally by Minikube for this assignment.)*
 
----
 
-##  Kubernetes Deployment Steps
+Kubernetes Deployment Steps
 
-### 1️ Start Minikube
 
-```bash
+
+Step 1: Start Minikube
+
+
+
 minikube start
-```
 
----
 
-### 2️ Apply Kubernetes Manifests
 
-```bash
+Step 2: Apply Kubernetes Manifests
+
+
+
 kubectl apply -f k8s/
-```
+
+
 
 This deploys:
 
-* MongoDB Secret
-* Persistent Volume Claim
-* MongoDB StatefulSet
-* Flask Deployment (2 replicas)
-* Services
-* Horizontal Pod Autoscaler
+MongoDB Secret
 
----
+Persistent Volume Claim
 
-### 3️ Verify Pods
+MongoDB StatefulSet
 
-```bash
+Flask Deployment
+
+Kubernetes Services
+
+Horizontal Pod Autoscaler
+
+
+
+Step 3: Verify Running Pods
+
+
+
 kubectl get pods
-```
 
-Expected output:
 
-* `mongo-0` → Running
-* `flask-app-*` → Running (2 replicas)
 
----
+Expected pods:
 
-### 4️ Access Flask Application
+mongo-0
 
-```bash
+flask-app pods (minimum 2 replicas)
+
+
+
+Step 4: Access the Flask Application
+
+
+
 minikube service flask-service
-```
 
-Open the browser URL and you should see:
 
-```
-Welcome to the Flask app! The current time is: <date & time>
-```
 
----
+MongoDB Authentication
 
-##  MongoDB Authentication
 
-MongoDB is secured using **username and password**, stored in a Kubernetes **Secret**.
 
-* Credentials are injected into MongoDB via environment variables.
-* Flask connects using the following URI:
+MongoDB authentication is enabled using Kubernetes Secrets.
 
-```
-mongodb://admin:password@mongo-service:27017/flask_db?authSource=admin
-```
 
-This ensures secure database access.
 
----
+Username and password are stored in a Kubernetes Secret.
 
-##  Kubernetes DNS Resolution (Explanation)
+MongoDB reads credentials from environment variables.
 
-Kubernetes provides built-in DNS via **CoreDNS**.
+Flask connects using a secure connection string provided via environment variables.
 
-* Each Service gets a DNS name:
 
-  ```
-  <service-name>.<namespace>.svc.cluster.local
-  ```
-* Flask connects to MongoDB using:
 
-  ```
-  mongo-service
-  ```
-* This avoids using Pod IPs, which can change.
-* If MongoDB pod restarts, DNS ensures connectivity remains intact.
+This ensures credentials are not hardcoded in the application code.
 
----
 
-##  Resource Requests & Limits
 
-Both Flask and MongoDB pods are configured with resource constraints.
+Kubernetes DNS Resolution
 
-### Why Resource Requests & Limits?
 
-* **Requests** ensure guaranteed minimum resources.
-* **Limits** prevent a pod from consuming excessive resources.
-* Helps Kubernetes schedule pods efficiently and maintain cluster stability.
 
-### Configuration Used:
+Kubernetes provides internal DNS resolution using CoreDNS.
 
-```yaml
-requests:
-  cpu: "0.2"
-  memory: "250Mi"
-limits:
-  cpu: "0.5"
-  memory: "500Mi"
-```
 
----
 
-##  Autoscaling (HPA)
+Each Service is assigned a DNS name.
 
-### HPA Configuration
+Flask connects to MongoDB using the service name mongo-service instead of pod IPs.
 
-* **Minimum replicas:** 2
-* **Maximum replicas:** 5
-* **CPU threshold:** 70%
+This ensures reliable communication even if MongoDB pods restart or change IPs.
 
-### HPA Status Command
 
-```bash
+
+Resource Requests and Limits
+
+
+
+Resource requests and limits are configured for Flask pods.
+
+
+
+Requests:
+
+CPU: 0.2
+
+Memory: 250Mi
+
+
+
+Limits:
+
+CPU: 0.5
+
+Memory: 500Mi
+
+
+
+Requests guarantee minimum resources.
+
+Limits prevent excessive resource usage.
+
+This helps Kubernetes schedule and manage pods efficiently.
+
+
+
+Autoscaling (HPA)
+
+
+
+Horizontal Pod Autoscaler is configured for the Flask application.
+
+
+
+Minimum replicas: 2
+
+Maximum replicas: 5
+
+Scaling based on CPU utilization above 70 percent.
+
+
+
+Verification commands:
+
+
+
 kubectl get hpa
-```
 
-Sample output:
-
-```
-TARGETS: cpu 0%/70%
-REPLICAS: 2
-```
-
-### Autoscaling Testing
-
-Load was generated using a BusyBox pod:
-
-```bash
-kubectl run load --rm -it --image=busybox -- sh
-```
-
-```sh
-while true; do wget -q -O- http://flask-service; done
-```
-
-Although CPU usage did not exceed 70% in this environment, the HPA was verified to be correctly configured and monitoring the deployment.
-
-<img width="1105" height="411" alt="Screenshot 2025-12-16 234616" src="https://github.com/user-attachments/assets/89403311-d0cb-4566-bd66-6405bfe96e27" />
+kubectl get pods
 
 
----
 
-##  API Testing
+Load was generated using a BusyBox pod.
 
-### POST Data
+In the local Minikube environment, CPU usage did not exceed the threshold, so replicas remained at the minimum.
 
-```bash
-curl -X POST -H "Content-Type: application/json" \
--d '{"name":"test"}' http://<minikube-ip>:<port>/data
-```
+The HPA configuration and metrics collection were verified successfully.
 
-### GET Data
 
-```bash
-curl http://<minikube-ip>:<port>/data
-```
 
----
+File: screenshots/hpa-status.png
 
-##  Design Choices
+File: screenshots/pods-running.png
 
-* **StatefulSet for MongoDB:** Ensures stable network identity and persistent storage.
-* **Deployment for Flask:** Enables horizontal scaling.
-* **ClusterIP for MongoDB:** Restricts database access inside cluster.
-* **NodePort for Flask:** Allows external access from browser.
-* **HPA:** Demonstrates scalability and production readiness.
 
-Alternative cloud-managed Kubernetes was considered but Minikube was chosen to keep the setup local and reproducible.
 
----
+Security Considerations
+
+
+
+The application code does not contain hardcoded credentials, secrets, or tokens.
+
+MongoDB credentials are managed using Kubernetes Secrets.
+
+The database connection string is injected into the Flask application via environment variables.
+
+Secrets are used only inside the Kubernetes cluster and are not exposed in the source code.
+
+The GitHub repository does not contain any real passwords, personal access tokens, or production credentials.
+
+A .gitignore file is used to prevent accidental commits of environment files or sensitive local data.
+
+
+
+Design Choices
+
+
+
+MongoDB is deployed as a StatefulSet to support persistent storage and stable identity.
+
+Flask is deployed using a Deployment to allow horizontal scaling.
+
+ClusterIP service is used for MongoDB to restrict access within the cluster.
+
+NodePort service is used for Flask to allow external access.
+
+Minikube is used to keep the setup local and reproducible.
+
+
+
+
+
+Screenshots
+
+
+
+1\. Kubernetes Pods Running
+
+Screenshot showing MongoDB StatefulSet pod and Flask application pods running successfully.
+
+File: screenshots/pods-running.png
+
+
+
+2\. Horizontal Pod Autoscaler Status
+
+Screenshot showing HPA configuration with minimum replicas set to 2 and maximum replicas set to 5.
+
+File: screenshots/hpa-status.png
+
+
+
+3\. Flask Application Access via Browser
+
+Screenshot showing the Flask application accessed using the Minikube NodePort service.
+
+File: screenshots/flask-browser.png
+
+
+
+4\. Autoscaling Load Test
+
+Screenshot showing load generation using a BusyBox pod making continuous requests to the Flask service.
+
+File: screenshots/load-test.png
+
+
+
+
+
